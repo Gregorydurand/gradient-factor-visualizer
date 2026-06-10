@@ -8,8 +8,12 @@
 //  • GF evaluated at the NEXT/shallower stop. To leave a stop we test the ceiling
 //    using GF(target_depth) — spec 4.9 step 3 ("evaluated for the shallower target
 //    depth"). Matches Subsurface.
-//  • First stop = GF_low ceiling rounded UP to the next stopIncrement (4.9 step 2);
-//    it anchors the GF slope for the whole ascent.
+//  • First stop = the deepest stop that genuinely requires a hold (4.9 step 2),
+//    found by probing each candidate with ITSELF as the GF-slope anchor; the
+//    GF_low ceiling rounded up only seeds the deepest candidate. Anchoring the
+//    slope at the raw rounded-up ceiling overshoots by one stop and runs the
+//    slope permissive — validated against Subsurface (spec 12). The first stop
+//    anchors the GF slope for the whole ascent.
 //  • Stop time accrues in 1-minute granularity; only stops with ≥1 min are recorded.
 //  • Gas switch happens on ARRIVAL at the switch stop (the hold there is on the new
 //    gas); travel into a stop uses the gas active at the deeper stop. Switch depth =
@@ -128,11 +132,40 @@ export function computeProfileForGFSet(
 
   const leaveBottomTime = ctx.clock;
 
-  // ── 2. First stop: GF_low-limited ceiling, rounded UP to a stop ───────────
+  // ── 2. First stop: the deepest stop that actually requires a hold ─────────
+  // The GF slope is anchored at the first stop, so the first-stop depth and the
+  // slope are mutually dependent. Rounding the GF_low ceiling UP and anchoring
+  // there (the naive choice) overshoots by one stop: the slope comes out too
+  // permissive and the engine sheds ~one stop's worth of deco (validated vs
+  // Subsurface — spec 12). We resolve the dependency by probing on a CLONE:
+  // ascend continuously (no holds) from the bottom and, at each candidate stop,
+  // test whether a hold is required using THAT candidate as the slope anchor.
+  // The deepest candidate that needs a hold is the first stop. Schreiner is
+  // exact for a constant ascent rate, so the probe's tissue state at a depth
+  // matches the real ascent's — the choice is self-consistent. The probe uses
+  // the same single ascent gas the real ascent does (gas picked at the bottom).
   const cLow = ceilingAtGF(ctx.state, gfSet.gfLow, env);
   let firstStopDepth = 0;
   if (cLow.ceilingDepth > EPS) {
-    firstStopDepth = Math.ceil(cLow.ceilingDepth / env.stopIncrement - EPS) * env.stopIncrement;
+    const ascentGas = bestGasAtDepth(ctx.depth, gases, env);
+    let probeState = cloneTissue(ctx.state);
+    let probeDepth = ctx.depth;
+    // Deepest possible first stop: the GF_low ceiling rounded up to a stop.
+    let candidate = Math.ceil(cLow.ceilingDepth / env.stopIncrement - EPS) * env.stopIncrement;
+    while (candidate >= env.lastStopDepth - EPS) {
+      if (probeDepth - candidate > EPS) {
+        const dt = (probeDepth - candidate) / env.ascentRate;
+        probeState = applyDepthChange(probeState, probeDepth, candidate, dt, ascentGas, env);
+        probeDepth = candidate;
+      }
+      const target = Math.max(0, candidate - env.stopIncrement); // next shallower stop / surface
+      const gfTarget = gfAtDepth(target, candidate, gfSet.gfLow, gfSet.gfHigh);
+      if (ceilingAtGF(probeState, gfTarget, env).ceilingDepth > target + EPS) {
+        firstStopDepth = candidate; // a hold is genuinely required here
+        break;
+      }
+      candidate -= env.stopIncrement;
+    }
   }
 
   const stops: StopEntry[] = [];
