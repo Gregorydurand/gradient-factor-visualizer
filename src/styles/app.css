@@ -1,0 +1,324 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+ * App layout + panel-specific styling. Instrument foundation (spec §10);
+ * full "magnificent" polish pass is Milestone 7.
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.brand-mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--gf-1), var(--gf-3));
+  box-shadow: 0 0 12px -2px var(--gf-2);
+}
+.brand-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ── Body: sidebar + stage ─────────────────────────────────────────────────── */
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.sidebar {
+  width: 380px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+.stage {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+/* ── Footer disclaimer (always visible, spec §1) ───────────────────────────── */
+.app-footer {
+  padding: var(--s-2) var(--s-5);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+/* ── Segment editor ────────────────────────────────────────────────────────── */
+.seg-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.seg-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr) auto;
+  gap: var(--s-2);
+  align-items: center;
+}
+.seg-row--head {
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+  padding: 0 2px;
+}
+.seg-row .field,
+.seg-row .field-input {
+  width: 100%;
+}
+.row-actions {
+  display: flex;
+  gap: 2px;
+}
+
+/* native select dressed like a field */
+.gas-select {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-1);
+  padding: var(--s-2) var(--s-2);
+  color: var(--text);
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+.gas-select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* ── Gas editor ────────────────────────────────────────────────────────────── */
+.gas-list,
+.gf-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.gas-card,
+.gf-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-1);
+  background: var(--bg-elev);
+  padding: var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.gas-card-head,
+.gf-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.gas-name {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  margin-right: auto;
+}
+.gas-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-3);
+}
+.gas-derived {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--fs-md);
+}
+.gas-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-md);
+}
+.muted {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+.link-btn {
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.link-btn:hover:not(:disabled) {
+  color: #79c0ff;
+}
+
+/* ── GF sets ───────────────────────────────────────────────────────────────── */
+.gf-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px -1px currentColor;
+}
+.gf-name {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 2px 0;
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+.gf-name:focus-visible {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+.gf-slider-row {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+}
+.gf-edge {
+  font-size: var(--fs-xs);
+}
+
+/* ── Environment ───────────────────────────────────────────────────────────── */
+.env-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.env-row .field-label {
+  width: 5.5rem;
+}
+.env-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+/* ── Provisional results read-out ──────────────────────────────────────────── */
+.readout {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-panel);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.readout--error {
+  color: var(--error);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+.readout-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+.readout-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.readout-note {
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+}
+.readout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s-3);
+}
+.readout-card {
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--gf-1);
+  border-radius: var(--r-1);
+  background: var(--bg-elev);
+  padding: var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.readout-card-name {
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+.readout-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-1) var(--s-3);
+}
+.readout-metrics dt {
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+}
+.readout-metrics dd {
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+.readout-stops {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--border);
+  line-height: 1.7;
+  word-spacing: 0.1em;
+}
+
+/* ── Stage placeholder (until the views land) ──────────────────────────────── */
+.stage-placeholder {
+  flex: 1;
+  min-height: 220px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  text-align: center;
+  padding: var(--s-5);
+}
+.placeholder-title {
+  font-size: var(--fs-lg);
+  color: var(--text-dim);
+}
+.placeholder-sub {
+  font-size: var(--fs-sm);
+  color: var(--text-faint);
+  max-width: 46ch;
+}
