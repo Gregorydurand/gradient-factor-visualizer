@@ -1,13 +1,14 @@
 // App shell — dark instrument layout (spec §10 foundation): an input-panel column
 // beside the stage, with the always-visible disclaimer footer (spec §1). The stage
-// holds the global scrubber + View 1 (deco profile), View 2 (ceiling), View 3 (the
-// GF/M-value pressure plot) and the outputs table; View 4 lands in M6 and the full
-// About/Limitations panel in M7.
+// holds the global scrubber + all four views (deco profile, ceiling, GF/M-value
+// pressure plot, tissue loading) and the outputs table; the full About/Limitations
+// panel lands in M7.
 import { OutputsTable } from './components/OutputsTable';
 import { Scrubber } from './components/Scrubber';
 import { CeilingChart } from './components/views/CeilingChart';
 import { DecoProfileChart } from './components/views/DecoProfileChart';
 import { PressurePlot } from './components/views/PressurePlot';
+import { TissueLoadingChart } from './components/views/TissueLoadingChart';
 import { EnvironmentPanel } from './components/panels/EnvironmentPanel';
 import { GasEditor } from './components/panels/GasEditor';
 import { GFSetsEditor } from './components/panels/GFSetsEditor';
@@ -49,6 +50,7 @@ export function App() {
           <DecoProfileChart />
           <CeilingChart />
           <PressurePlot />
+          <TissueLoadingChart />
           <OutputsTable />
         </main>
       </div>

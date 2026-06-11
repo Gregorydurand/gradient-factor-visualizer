@@ -376,3 +376,45 @@
 .legend-rule--ambient {
   border-top-color: var(--ambient);
 }
+
+/* ── Milestone 6 — View 4 (tissue loading bars) ────────────────────────────── */
+.tissue-bar {
+  opacity: 0.55;
+  transition: opacity 0.1s ease;
+}
+.tissue-bar--controlling {
+  opacity: 1;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, currentColor 60%, transparent));
+}
+.tissue-limit-line {
+  stroke: var(--mvalue);
+  stroke-width: 1.5;
+  stroke-dasharray: 7 5;
+  opacity: 0.85;
+}
+.tissue-limit-label {
+  fill: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.tissue-axis-label {
+  fill: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.tissue-axis-label.is-focus {
+  fill: var(--text);
+  font-weight: 700;
+}
+.tissue-hit {
+  cursor: pointer;
+}
+/* legend key: the "controlling = highlighted" swatch */
+.legend-swatch-ctrl {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: var(--text-dim);
+  box-shadow: 0 0 6px 0 var(--text-dim);
+}

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { bottomEndTime, compartmentAtTime, controllingAtTime, firstStopArrivalTime } from './loading';
+import {
+  bottomEndTime,
+  compartmentAtTime,
+  compartmentLoadFraction,
+  controllingAtTime,
+  firstStopArrivalTime,
+} from './loading';
 import type { CompartmentState, LoadingPoint, ProfilePoint } from '../../engine';
 
 // Build a tiny 2-compartment timeline (only indices we assert need to be present).
@@ -62,5 +68,29 @@ describe('firstStopArrivalTime', () => {
 
   it('falls back to the end of the bottom when there is no deco', () => {
     expect(firstStopArrivalTime(ascentProfile, 0)).toBe(22);
+  });
+});
+
+describe('compartmentLoadFraction', () => {
+  it('reports combined loading and frac = pInert / GF M-value', () => {
+    const r = compartmentLoadFraction(0, 1.5, 0.5, 3.0, 0.6);
+    expect(r.pInert).toBeCloseTo(2.0, 9);
+    expect(r.mGf).toBeGreaterThan(0);
+    expect(r.frac).toBeCloseTo(r.pInert / r.mGf, 9);
+  });
+
+  it('reaches exactly 1.0 when the loading sits on the GF M-value', () => {
+    // pHe = 0 → a/b are the N₂ coefficients regardless of pN₂ magnitude, so the GF
+    // M-value is the same when we then load pN₂ up to it.
+    const probe = compartmentLoadFraction(3, 1.0, 0, 2.5, 0.7);
+    const atLimit = compartmentLoadFraction(3, probe.mGf, 0, 2.5, 0.7);
+    expect(atLimit.frac).toBeCloseTo(1, 9);
+  });
+
+  it('uses the trimix-combined a/b (He shifts the limit vs all-N₂)', () => {
+    const trimix = compartmentLoadFraction(0, 1.0, 1.0, 3.0, 0.8);
+    const allN2 = compartmentLoadFraction(0, 2.0, 0, 3.0, 0.8);
+    expect(trimix.pInert).toBeCloseTo(allN2.pInert, 9); // same total inert
+    expect(trimix.mGf).not.toBeCloseTo(allN2.mGf, 3); // but a different limit
   });
 });

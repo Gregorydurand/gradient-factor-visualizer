@@ -1,7 +1,9 @@
 // Pure read helpers over an engine GFResult's loadingTimeline (16-compartment
-// pN₂/pHe + controlling index per sample) and profile, for View 3's trajectory and
-// the global scrubber. No DOM, no React — interpolation over the dense, time-ordered
-// samples the engine produces. loadingTimeline shares profile's time grid.
+// pN₂/pHe + controlling index per sample) and profile, for the pressure plot (View
+// 3) trajectory, the tissue-loading bars (View 4), and the global scrubber. No DOM,
+// no React — interpolation over the dense, time-ordered samples the engine produces.
+// loadingTimeline shares profile's time grid.
+import { combinedAB, mValueGF } from '../../engine';
 import type { LoadingPoint, ProfilePoint } from '../../engine';
 
 /**
@@ -79,4 +81,23 @@ export function firstStopArrivalTime(profile: ProfilePoint[], firstStopDepth: nu
     if (p.time >= tEnd && p.depth <= firstStopDepth + 1e-6) return p.time;
   }
   return tEnd;
+}
+
+/**
+ * Compartment `c`'s combined inert loading as a fraction of its GF-adjusted M-value
+ * (the tolerated inert pressure) at ambient `pAmb` and gradient factor `gf` — the
+ * View 4 bar height. `frac` is 1.0 exactly when the compartment sits on its limit;
+ * a/b are the trimix-combined coefficients for the current N₂/He split (spec 4.6).
+ */
+export function compartmentLoadFraction(
+  c: number,
+  pN2: number,
+  pHe: number,
+  pAmb: number,
+  gf: number,
+): { pInert: number; mGf: number; frac: number } {
+  const pInert = pN2 + pHe;
+  const { a, b } = combinedAB(c, pN2, pHe);
+  const mGf = mValueGF(a, b, pAmb, gf);
+  return { pInert, mGf, frac: mGf > 0 ? pInert / mGf : 0 };
 }
