@@ -62,7 +62,7 @@
 .grid line {
   stroke: var(--border);
   stroke-width: 1;
-  opacity: 0.4;
+  opacity: 0.22; /* whisper-faint (§10) */
 }
 .tick-label {
   fill: var(--text-faint);
@@ -380,7 +380,9 @@
 /* ── Milestone 6 — View 4 (tissue loading bars) ────────────────────────────── */
 .tissue-bar {
   opacity: 0.55;
-  transition: opacity 0.1s ease;
+  /* Fill/drain smoothly as the scrubber moves (§9). SVG geometry props animate in
+     modern browsers; instant fallback is still correct. */
+  transition: opacity 0.1s ease, y 0.14s ease, height 0.14s ease;
 }
 .tissue-bar--controlling {
   opacity: 1;

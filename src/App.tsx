@@ -1,8 +1,9 @@
-// App shell — dark instrument layout (spec §10 foundation): an input-panel column
-// beside the stage, with the always-visible disclaimer footer (spec §1). The stage
-// holds the global scrubber + all four views (deco profile, ceiling, GF/M-value
-// pressure plot, tissue loading) and the outputs table; the full About/Limitations
-// panel lands in M7.
+// App shell — dark instrument layout (spec §10): an input-panel column beside the
+// stage (global scrubber + all four views + outputs table), the always-visible
+// disclaimer footer (spec §1), and an About/Limitations modal naming the model and
+// constants (spec §13).
+import { useState } from 'react';
+import { AboutModal } from './components/AboutModal';
 import { OutputsTable } from './components/OutputsTable';
 import { Scrubber } from './components/Scrubber';
 import { CeilingChart } from './components/views/CeilingChart';
@@ -24,16 +25,23 @@ const UNIT_OPTS = [
 export function App() {
   const units = useStore((s) => s.units);
   const setUnits = useStore((s) => s.setUnits);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   return (
     <div className="app">
       <header className="app-header">
         <div className="brand">
           <span className="brand-mark" />
-          <h1 className="brand-title">Gradient Factor Visualizer</h1>
+          <div className="brand-text">
+            <h1 className="brand-title">Gradient Factor Visualizer</h1>
+            <span className="brand-sub">ZH-L16C · gradient factors</span>
+          </div>
         </div>
         <div className="header-tools">
           <SegmentedControl options={UNIT_OPTS} value={units} ariaLabel="Units" onChange={setUnits} />
+          <button type="button" className="about-btn" onClick={() => setAboutOpen(true)}>
+            About
+          </button>
         </div>
       </header>
 
@@ -58,6 +66,8 @@ export function App() {
       <footer className="app-footer">
         Educational visualization only — not a dive planner. Do not use to plan real dives.
       </footer>
+
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }
