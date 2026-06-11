@@ -69,13 +69,22 @@
   font-family: var(--font-mono);
   font-size: 10px;
 }
-.profile-curve {
+.profile-curve,
+.ceiling-curve {
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
   filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 35%, transparent));
 }
-.cursor line {
+/* View 2: the actual depth drawn faintly behind each bold ceiling curve. */
+.depth-ref {
+  stroke-width: 1;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 2 3;
+  opacity: 0.3;
+}
+.cursor-line {
   stroke: var(--text-dim);
   stroke-width: 1;
   stroke-dasharray: 3 3;
@@ -104,6 +113,12 @@
   font-weight: 600;
   color: var(--text);
   margin-bottom: var(--s-1);
+}
+.chart-readout-key {
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
 }
 .chart-readout-row {
   display: grid;

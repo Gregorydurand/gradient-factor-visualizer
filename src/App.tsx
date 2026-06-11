@@ -1,8 +1,9 @@
 // App shell — dark instrument layout (spec §10 foundation): an input-panel column
 // beside the stage, with the always-visible disclaimer footer (spec §1). The
-// stage now holds View 1 (deco profile) + the outputs table (Milestone 3); the
-// remaining views land in M4–M6 and the full About/Limitations panel in M7.
+// stage holds View 1 (deco profile) + View 2 (ceiling) + the outputs table; the
+// remaining views land in M5–M6 and the full About/Limitations panel in M7.
 import { OutputsTable } from './components/OutputsTable';
+import { CeilingChart } from './components/views/CeilingChart';
 import { DecoProfileChart } from './components/views/DecoProfileChart';
 import { EnvironmentPanel } from './components/panels/EnvironmentPanel';
 import { GasEditor } from './components/panels/GasEditor';
@@ -42,6 +43,7 @@ export function App() {
 
         <main className="stage">
           <DecoProfileChart />
+          <CeilingChart />
           <OutputsTable />
         </main>
       </div>
