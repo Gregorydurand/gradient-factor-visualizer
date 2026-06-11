@@ -25,23 +25,31 @@ export function GasEditor() {
   const removeGas = useStore((s) => s.removeGas);
   const du = depthUnitLabel(units);
   const bottomCount = gases.filter((g) => g.role === 'bottom').length;
+  const isCCR = env.mode === 'ccr';
 
   return (
     <Panel
-      title="Gases"
+      title={isCCR ? 'Diluent' : 'Gases'}
       subtitle={`${gases.length}`}
       actions={
         <>
-          <IconButton title="Add bottom gas" onClick={() => addGas('bottom')}>
+          <IconButton title={isCCR ? 'Add gas' : 'Add bottom gas'} onClick={() => addGas('bottom')}>
             ⬣
           </IconButton>
-          <IconButton title="Add deco gas" onClick={() => addGas('deco')}>
-            ＋
-          </IconButton>
+          {!isCCR && (
+            <IconButton title="Add deco gas" onClick={() => addGas('deco')}>
+              ＋
+            </IconButton>
+          )}
         </>
       }
     >
       <div className="gas-list">
+        {isCCR && (
+          <p className="gas-ccr-note">
+            The segment’s gas is the loop diluent — the loop holds O₂ at the setpoint.
+          </p>
+        )}
         {gases.map((g) => {
           const o2 = round(g.fO2 * 100);
           const he = round(g.fHe * 100);
@@ -53,15 +61,19 @@ export function GasEditor() {
             <div className="gas-card" key={g.id}>
               <div className="gas-card-head">
                 <span className="gas-name tabular">{g.name}</span>
-                <SegmentedControl
-                  options={ROLE_OPTS}
-                  value={g.role}
-                  ariaLabel="Gas role"
-                  onChange={(role) => {
-                    if (isLastBottom && role === 'deco') return; // keep ≥1 bottom gas
-                    updateGas(g.id, { role });
-                  }}
-                />
+                {isCCR ? (
+                  <span className="gas-role-static">Diluent</span>
+                ) : (
+                  <SegmentedControl
+                    options={ROLE_OPTS}
+                    value={g.role}
+                    ariaLabel="Gas role"
+                    onChange={(role) => {
+                      if (isLastBottom && role === 'deco') return; // keep ≥1 bottom gas
+                      updateGas(g.id, { role });
+                    }}
+                  />
+                )}
                 <IconButton
                   title={rm.ok ? 'Remove gas' : `Can’t remove — ${rm.reason}`}
                   danger
@@ -101,7 +113,7 @@ export function GasEditor() {
                 </div>
               </div>
 
-              {g.role === 'deco' && (
+              {!isCCR && g.role === 'deco' && (
                 <SwitchDepthControl gas={g} env={env} units={units} onChange={updateGas} />
               )}
             </div>

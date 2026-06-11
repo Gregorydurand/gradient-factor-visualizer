@@ -283,3 +283,26 @@
   flex-wrap: wrap;
   gap: var(--s-3);
 }
+
+/* ── CCR (rebreather) UI bits ───────────────────────────────────────────────── */
+.env-ccr-note,
+.gas-ccr-note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+.gas-ccr-note {
+  padding-bottom: var(--s-1);
+}
+.gas-role-static {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ok);
+  border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
+  border-radius: var(--r-1);
+  padding: 2px var(--s-2);
+}

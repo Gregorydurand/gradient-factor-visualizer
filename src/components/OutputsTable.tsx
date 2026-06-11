@@ -15,6 +15,7 @@ export function OutputsTable() {
   const gfSets = useStore((s) => s.gfSets);
   const units = useStore((s) => s.units);
   const gases = useStore((s) => s.gases);
+  const segments = useStore((s) => s.segments);
   const env = useStore((s) => s.env);
   const res = useEngineResults();
 
@@ -27,11 +28,14 @@ export function OutputsTable() {
   const du = depthUnitLabel(units);
   const depth = (m: number) => `${round(depthToDisplay(m, units))} ${du}`;
   const setById = new Map(gfSets.map((g) => [g.id, g]));
+  const isCCR = env.mode === 'ccr';
 
-  // Gas-switch plan (shared across sets — switch depths are depth-based).
+  // OC: the deco-gas switch plan (switch depths are depth-based, shared across sets).
+  // CCR: the loop diluent (the gas of the last segment) + the setpoint pair.
   const maxDepth = Math.max(1, ...results.flatMap((r) => r.profile.map((p) => p.depth)));
-  const plan = gasPlan(gases, env, maxDepth);
-  const switchAt = (m: number) => plan.switches.find((sw) => Math.abs(sw.depth - m) < 0.05);
+  const plan = isCCR ? null : gasPlan(gases, env, maxDepth);
+  const switchAt = (m: number) => plan?.switches.find((sw) => Math.abs(sw.depth - m) < 0.05);
+  const diluent = gases.find((g) => g.id === segments[segments.length - 1]?.gasId);
 
   return (
     <div className="viz-card">
@@ -40,21 +44,35 @@ export function OutputsTable() {
         <span className="viz-axis-note">per GF set</span>
       </header>
 
-      {plan.switches.length > 0 && (
-        <div className="gas-plan">
-          <span className="gas-plan-label">Gas plan</span>
-          <span className="gas-plan-seq">
-            <span className="gas-chip">{plan.start.name}</span>
-            {plan.switches.map((sw) => (
-              <span className="gas-plan-step" key={`${sw.gas.id}-${sw.depth}`}>
-                <span className="gas-plan-arrow">→</span>
-                <span className="gas-chip">{sw.gas.name}</span>
-                <span className="gas-plan-at tabular">@ {depth(sw.depth)}</span>
+      {isCCR
+        ? diluent && (
+            <div className="gas-plan">
+              <span className="gas-plan-label">Loop</span>
+              <span className="gas-plan-seq">
+                <span className="gas-chip">{diluent.name}</span>
+                <span className="gas-plan-at">diluent</span>
+                <span className="gas-plan-arrow">·</span>
+                <span className="gas-plan-at tabular">
+                  SP {round(env.setpointLow, 2)} → {round(env.setpointHigh, 2)} bar
+                </span>
               </span>
-            ))}
-          </span>
-        </div>
-      )}
+            </div>
+          )
+        : plan!.switches.length > 0 && (
+            <div className="gas-plan">
+              <span className="gas-plan-label">Gas plan</span>
+              <span className="gas-plan-seq">
+                <span className="gas-chip">{plan!.start.name}</span>
+                {plan!.switches.map((sw) => (
+                  <span className="gas-plan-step" key={`${sw.gas.id}-${sw.depth}`}>
+                    <span className="gas-plan-arrow">→</span>
+                    <span className="gas-chip">{sw.gas.name}</span>
+                    <span className="gas-plan-at tabular">@ {depth(sw.depth)}</span>
+                  </span>
+                ))}
+              </span>
+            </div>
+          )}
 
       <table className="outputs">
         <thead>

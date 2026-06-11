@@ -20,6 +20,10 @@ const PPO2_OPTS = [
   { value: 1.4, label: '1.4' },
   { value: 1.6, label: '1.6' },
 ];
+const MODE_OPTS = [
+  { value: 'oc' as const, label: 'Open circuit' },
+  { value: 'ccr' as const, label: 'CCR' },
+];
 
 export function EnvironmentPanel() {
   const env = useStore((s) => s.env);
@@ -27,9 +31,48 @@ export function EnvironmentPanel() {
   const updateEnv = useStore((s) => s.updateEnv);
   const du = depthUnitLabel(units);
   const ru = rateUnitLabel(units);
+  const isCCR = env.mode === 'ccr';
 
   return (
-    <Panel title="Environment" defaultOpen={false}>
+    <Panel title="Environment" subtitle={isCCR ? 'CCR' : undefined} defaultOpen={false}>
+      <div className="env-row">
+        <span className="field-label">Mode</span>
+        <SegmentedControl
+          options={MODE_OPTS}
+          value={env.mode}
+          ariaLabel="Dive mode"
+          onChange={(mode) => updateEnv({ mode })}
+        />
+      </div>
+
+      {isCCR && (
+        <div className="env-fields">
+          <NumberField
+            label="Descent SP"
+            suffix="bar"
+            min={0.4}
+            max={1.6}
+            step={0.05}
+            decimals={2}
+            width={72}
+            value={env.setpointLow}
+            onChange={(v) => updateEnv({ setpointLow: v })}
+          />
+          <NumberField
+            label="Working SP"
+            suffix="bar"
+            min={0.4}
+            max={1.6}
+            step={0.05}
+            decimals={2}
+            width={72}
+            value={env.setpointHigh}
+            onChange={(v) => updateEnv({ setpointHigh: v })}
+          />
+          <span className="env-ccr-note">Working SP holds from the bottom through deco.</span>
+        </div>
+      )}
+
       <div className="env-row">
         <span className="field-label">Water</span>
         <SegmentedControl

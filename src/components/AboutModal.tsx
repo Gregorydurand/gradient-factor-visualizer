@@ -66,6 +66,18 @@ export function AboutModal({ open, onClose }: { open: boolean; onClose: () => vo
           </section>
 
           <section>
+            <h3>Open &amp; closed circuit</h3>
+            <p>
+              <strong>Open circuit</strong> breathes a fixed gas, so ppO₂ rises with depth;
+              deco gases switch at their MOD. <strong>CCR</strong> holds ppO₂ at a setpoint and the
+              diluent supplies the inert gases — a <strong>low (descent) setpoint</strong> while
+              descending, then a <strong>working setpoint</strong> from the bottom through all of
+              deco. The CCR model is a single diluent with no bailout, validated against a
+              Subsurface CCR plan (stop depths exact, per-stop times within ±1 min).
+            </p>
+          </section>
+
+          <section>
             <h3>
               Constants <span className="modal-cite">engine/constants.ts (spec §4.1) — auditable</span>
             </h3>

@@ -29,13 +29,14 @@ export function DecoProfileChart() {
       title="Deco profile"
       renderPlot={(c) => {
         const maxDepth = Math.max(1, ...c.results.flatMap((r) => r.profile.map((p) => p.depth)));
-        const plan = gasPlan(gases, env, maxDepth);
+        // OC deco-gas switches only; CCR holds a single diluent (no switch lines).
+        const switches = env.mode === 'oc' ? gasPlan(gases, env, maxDepth).switches : [];
         const xL = c.x.map(c.x.domain[0]);
         const xR = c.x.map(c.x.domain[1]);
         return (
           <>
             {/* gas-switch depth lines (behind the curves) */}
-            {plan.switches.map((sw) => {
+            {switches.map((sw) => {
               const yy = c.y.map(c.toDisp(sw.depth));
               return (
                 <g key={`gs-${sw.gas.id}-${sw.depth}`} pointerEvents="none">
@@ -60,7 +61,7 @@ export function DecoProfileChart() {
 
             {/* gas-switch markers: where each set actually switches */}
             {c.results.flatMap((r) =>
-              plan.switches.map((sw) => {
+              switches.map((sw) => {
                 const t = firstStopArrivalTime(r.profile, sw.depth);
                 const cx = c.x.map(t);
                 const cy = c.y.map(c.toDisp(sw.depth));
