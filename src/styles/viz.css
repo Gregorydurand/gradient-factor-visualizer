@@ -225,3 +225,154 @@
 .outputs-none {
   color: var(--text-faint);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Milestone 5 — global scrubber + View 3 (GF / M-value pressure plot).
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Global time scrubber (sticky) ─────────────────────────────────────────── */
+.scrubber {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-2);
+  box-shadow: 0 6px 18px -10px #000c;
+}
+.scrubber-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.scrubber-range {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.scrubber-value {
+  font-size: var(--fs-md);
+  color: var(--text);
+  min-width: 9ch;
+  text-align: right;
+}
+.scrubber-unit {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+/* ── View 3 head (compartment select) ──────────────────────────────────────── */
+.pp-head-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.pp-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-1);
+  padding: 3px var(--s-2);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.pp-select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* ── Pressure-plot lines ────────────────────────────────────────────────────── */
+.ambient-line {
+  stroke: var(--ambient);
+  stroke-width: 1.25;
+}
+.mvalue-line {
+  /* the physical limit — stark, neutral, dashed; never a GF hue (§10) */
+  stroke: var(--mvalue);
+  stroke-width: 1.5;
+  stroke-dasharray: 7 5;
+}
+.gf-limit {
+  stroke-width: 2;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 35%, transparent));
+}
+.trajectory {
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.55;
+  stroke-dasharray: 1 2;
+}
+.traj-marker {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+/* ── View 3 read-out ───────────────────────────────────────────────────────── */
+.pp-readout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.pp-readout-head {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.pp-badge {
+  font-size: var(--fs-xs);
+  color: var(--ok);
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  border-radius: 999px;
+  padding: 0 var(--s-2);
+  letter-spacing: 0.04em;
+}
+.pp-readout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--s-1) var(--s-4);
+}
+.pp-readout-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+}
+.pp-readout-name {
+  color: var(--text-dim);
+}
+.pp-readout-val {
+  color: var(--text);
+}
+.pp-readout-grad {
+  color: var(--text-faint);
+  min-width: 7ch;
+  text-align: right;
+}
+
+/* ── Legend rules for the shared reference lines ───────────────────────────── */
+.legend-rule {
+  width: 18px;
+  height: 0;
+  border-top-width: 2px;
+  border-top-style: solid;
+  flex-shrink: 0;
+}
+.legend-rule--mvalue {
+  border-top-style: dashed;
+  border-top-color: var(--mvalue);
+}
+.legend-rule--ambient {
+  border-top-color: var(--ambient);
+}

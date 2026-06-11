@@ -31,22 +31,20 @@ export function DecoProfileChart() {
               stroke={c.colors[r.gfSetId] ?? 'var(--gf-1)'}
             />
           ))}
-          {c.hoverTime !== null &&
-            c.results.map((r) => (
-              <circle
-                key={r.gfSetId}
-                className="hover-dot"
-                r={3.5}
-                cx={c.x.map(c.hoverTime!)}
-                cy={c.y.map(c.toDisp(depthAtTime(r.profile, c.hoverTime!)))}
-                fill={c.colors[r.gfSetId] ?? 'var(--gf-1)'}
-              />
-            ))}
+          {c.results.map((r) => (
+            <circle
+              key={r.gfSetId}
+              className="hover-dot"
+              r={3.5}
+              cx={c.x.map(c.time)}
+              cy={c.y.map(c.toDisp(depthAtTime(r.profile, c.time)))}
+              fill={c.colors[r.gfSetId] ?? 'var(--gf-1)'}
+            />
+          ))}
         </>
       )}
       renderReadout={(c) => {
-        const t = c.hoverTime;
-        if (t === null) return null;
+        const t = c.time;
         return (
           <>
             <div className="chart-readout-time tabular">{round(t, 1)} min</div>

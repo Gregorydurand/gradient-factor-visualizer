@@ -5,11 +5,12 @@
 // thin and the axes stay pixel-identical (spec §10: one visual language).
 //
 // View-specific bits arrive as three render props, each given one `ChartCtx`:
-//   renderPlot   → SVG curves + hover markers, drawn inside the plot area
-//   renderReadout→ HTML rows for the floating hover read-out
+//   renderPlot   → SVG curves + the marker, drawn inside the plot area
+//   renderReadout→ HTML rows for the floating read-out
 //   renderLegend → HTML <li>s for the legend
-// The global time scrubber that will link Views 2–4 is Milestone 5; hover is local.
-import { useRef, useState, type ReactNode } from 'react';
+// The cursor + read-out track the SHARED scrubTime (spec §9), held persistently;
+// moving the pointer over the chart scrubs that single current-time for all views.
+import { useRef, type ReactNode } from 'react';
 import type { GFResult, GFSet } from '../../../engine';
 import type { Units } from '../../store/defaults';
 import { useEngineResults } from '../../store/useEngineResults';
@@ -32,7 +33,7 @@ export type ChartCtx = {
   x: Scale; // time (min) → px
   y: Scale; // display depth → px (downward)
   plotW: number;
-  hoverTime: number | null;
+  time: number; // shared current-time (min), clamped to this chart's range
 };
 
 type Props = {
@@ -46,9 +47,10 @@ export function TimeDepthChart({ title, renderPlot, renderReadout, renderLegend 
   const res = useEngineResults();
   const gfSets = useStore((s) => s.gfSets);
   const units = useStore((s) => s.units);
+  const scrubTime = useStore((s) => s.scrubTime);
+  const setScrubTime = useStore((s) => s.setScrubTime);
   const [wrapRef, width] = useMeasuredWidth<HTMLDivElement>();
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [hoverTime, setHoverTime] = useState<number | null>(null);
 
   if (!res.ok) {
     return <div className="viz-card viz-error">⚠ Engine error — {res.error}</div>;
@@ -71,17 +73,19 @@ export function TimeDepthChart({ title, renderPlot, renderReadout, renderLegend 
   const xTicks = niceTicks(0, maxTime, 8);
   const yTicks = niceTicks(0, maxDepthDisp, 6);
 
-  const ctx: ChartCtx = { results, gfSets, colors, units, du, toDisp, x, y, plotW, hoverTime };
+  // The shared current-time, clamped to what this chart can show.
+  const time = Math.min(maxTime, Math.max(0, scrubTime));
+  const ctx: ChartCtx = { results, gfSets, colors, units, du, toDisp, x, y, plotW, time };
 
   const onMove = (e: React.PointerEvent) => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
     const px = e.clientX - rect.left;
-    if (px < M.left || px > M.left + plotW) return setHoverTime(null);
-    setHoverTime(Math.min(maxTime, Math.max(0, x.invert(px))));
+    if (px < M.left || px > M.left + plotW) return;
+    setScrubTime(Math.min(maxTime, Math.max(0, x.invert(px))));
   };
 
-  const cursorX = hoverTime !== null ? x.map(hoverTime) : 0;
+  const cursorX = x.map(time);
   const flip = cursorX > M.left + plotW * 0.62; // keep the read-out on-canvas
 
   return (
@@ -99,7 +103,6 @@ export function TimeDepthChart({ title, renderPlot, renderReadout, renderLegend 
             width={width}
             height={HEIGHT}
             onPointerMove={onMove}
-            onPointerLeave={() => setHoverTime(null)}
           >
             <g className="grid">
               {yTicks.map((t) => (
@@ -122,20 +125,18 @@ export function TimeDepthChart({ title, renderPlot, renderReadout, renderLegend 
 
             {renderPlot(ctx)}
 
-            {hoverTime !== null && (
-              <line
-                className="cursor-line"
-                x1={cursorX}
-                x2={cursorX}
-                y1={M.top}
-                y2={HEIGHT - M.bottom}
-                pointerEvents="none"
-              />
-            )}
+            <line
+              className="cursor-line"
+              x1={cursorX}
+              x2={cursorX}
+              y1={M.top}
+              y2={HEIGHT - M.bottom}
+              pointerEvents="none"
+            />
           </svg>
         )}
 
-        {hoverTime !== null && (
+        {width > 0 && (
           <div className={'chart-readout' + (flip ? ' is-flipped' : '')} style={{ left: cursorX }}>
             {renderReadout(ctx)}
           </div>

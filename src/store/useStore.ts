@@ -28,6 +28,9 @@ type State = {
   gfSets: GFSet[];
   env: EnvironmentConfig;
   units: Units;
+  /** Shared "current time" (min) driving the linked cursor/marker across the
+   *  views (spec §9). Seeded by the scrubber; consumers clamp to [0, runtime]. */
+  scrubTime: number;
 };
 
 type Actions = {
@@ -46,6 +49,7 @@ type Actions = {
 
   updateEnv: (patch: Partial<EnvironmentConfig>) => void;
   setUnits: (units: Units) => void;
+  setScrubTime: (t: number) => void;
 };
 
 export const useStore = create<State & Actions>((set) => ({
@@ -54,6 +58,7 @@ export const useStore = create<State & Actions>((set) => ({
   gfSets: DEFAULT_GF_SETS,
   env: DEFAULT_ENVIRONMENT,
   units: 'metric',
+  scrubTime: 0,
 
   // ── Segments ───────────────────────────────────────────────────────────────
   addSegment: () =>
@@ -126,6 +131,7 @@ export const useStore = create<State & Actions>((set) => ({
   // ── Environment / units ──────────────────────────────────────────────────────
   updateEnv: (patch) => set((s) => ({ env: { ...s.env, ...patch } })),
   setUnits: (units) => set({ units }),
+  setScrubTime: (t) => set({ scrubTime: t }),
 }));
 
 /** Can this gas be deleted? (UI uses this to disable the control + explain why.) */
