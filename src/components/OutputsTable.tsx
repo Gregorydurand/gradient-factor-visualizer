@@ -9,10 +9,13 @@ import { useStore } from '../store/useStore';
 import { assignGFColors } from '../theme/gfColors';
 import { depthToDisplay, depthUnitLabel } from '../units';
 import { round } from '../util';
+import { gasPlan } from '../viz/gasPlan';
 
 export function OutputsTable() {
   const gfSets = useStore((s) => s.gfSets);
   const units = useStore((s) => s.units);
+  const gases = useStore((s) => s.gases);
+  const env = useStore((s) => s.env);
   const res = useEngineResults();
 
   if (!res.ok) {
@@ -25,12 +28,33 @@ export function OutputsTable() {
   const depth = (m: number) => `${round(depthToDisplay(m, units))} ${du}`;
   const setById = new Map(gfSets.map((g) => [g.id, g]));
 
+  // Gas-switch plan (shared across sets — switch depths are depth-based).
+  const maxDepth = Math.max(1, ...results.flatMap((r) => r.profile.map((p) => p.depth)));
+  const plan = gasPlan(gases, env, maxDepth);
+  const switchAt = (m: number) => plan.switches.find((sw) => Math.abs(sw.depth - m) < 0.05);
+
   return (
     <div className="viz-card">
       <header className="viz-head">
         <span className="viz-title">Outputs</span>
         <span className="viz-axis-note">per GF set</span>
       </header>
+
+      {plan.switches.length > 0 && (
+        <div className="gas-plan">
+          <span className="gas-plan-label">Gas plan</span>
+          <span className="gas-plan-seq">
+            <span className="gas-chip">{plan.start.name}</span>
+            {plan.switches.map((sw) => (
+              <span className="gas-plan-step" key={`${sw.gas.id}-${sw.depth}`}>
+                <span className="gas-plan-arrow">→</span>
+                <span className="gas-chip">{sw.gas.name}</span>
+                <span className="gas-plan-at tabular">@ {depth(sw.depth)}</span>
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
 
       <table className="outputs">
         <thead>
@@ -75,13 +99,17 @@ export function OutputsTable() {
               <td className="tabular" key={r.gfSetId}>
                 {r.stops.length > 0 ? (
                   <ul className="outputs-stops">
-                    {r.stops.map((s, i) => (
-                      <li key={i}>
-                        <span className="outputs-stop-depth">{depth(s.depth)}</span>
-                        <span className="outputs-stop-arrow">→</span>
-                        <span className="outputs-stop-min">{s.duration}</span>
-                      </li>
-                    ))}
+                    {r.stops.map((s, i) => {
+                      const sw = switchAt(s.depth);
+                      return (
+                        <li key={i}>
+                          <span className="outputs-stop-depth">{depth(s.depth)}</span>
+                          <span className="outputs-stop-arrow">→</span>
+                          <span className="outputs-stop-min">{s.duration}</span>
+                          {sw && <span className="outputs-stop-gas">⟶ {sw.gas.name}</span>}
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <span className="outputs-none">no stops</span>
