@@ -42,11 +42,13 @@ export type EnvironmentConfig = {
   stopIncrement: number; // m, default 3
   ppO2Switch: number; // bar, selectable preset 1.4 | 1.6, default 1.6
   // Open-circuit vs closed-circuit rebreather. In 'ccr' the loop holds ppO2 at a
-  // setpoint (low on the bottom, high on deco — switched at the start of ascent)
-  // and the diluent supplies the inert gases. 'oc' is the v1 behaviour.
+  // setpoint and the diluent supplies the inert gases. setpointLow is the DESCENT
+  // setpoint (used only while descending); setpointHigh is the working setpoint,
+  // used for the bottom hold and the whole ascent/deco — i.e. the loop switches to
+  // the high setpoint on arrival at the bottom (matches Subsurface). 'oc' = v1.
   mode: 'oc' | 'ccr'; // default 'oc'
-  setpointLow: number; // bar, CCR bottom setpoint, default 0.7
-  setpointHigh: number; // bar, CCR deco setpoint, default 1.3
+  setpointLow: number; // bar, CCR descent setpoint, default 0.7
+  setpointHigh: number; // bar, CCR working/deco setpoint, default 1.3
 };
 
 // ---- engine output ----

@@ -119,13 +119,17 @@ export function computeProfileForGFSet(
   record(ctx); // t=0 at the surface
 
   // Breathing-source selection. OC: the given / richest-usable gas at its fixed
-  // fraction. CCR: the diluent on a constant-ppO₂ loop — the LOW setpoint on the
-  // bottom, the HIGH setpoint once ascent/deco begins (single-diluent model). The
-  // ascent diluent is the gas breathed at the end of the bottom (the last segment).
+  // fraction. CCR: the diluent on a constant-ppO₂ loop. The LOW setpoint is used
+  // ONLY while descending; the HIGH (working) setpoint governs every hold and the
+  // whole ascent/deco — i.e. the setpoint switches to high on ARRIVAL at the bottom
+  // (validated against Subsurface, which holds the bottom at the high setpoint).
+  // Single-diluent model: the ascent diluent is the gas of the last segment.
   const isCCR = env.mode === 'ccr';
   const ccrDiluent = gasById.get(segments[segments.length - 1]!.gasId);
-  const bottomBreathing = (gas: GasMix): Breathing =>
+  const descentBreathing = (gas: GasMix): Breathing =>
     isCCR ? ccrBreathing(gas, env.setpointLow) : ocBreathing(gas);
+  const holdBreathing = (gas: GasMix): Breathing =>
+    isCCR ? ccrBreathing(gas, env.setpointHigh) : ocBreathing(gas);
   const ascentBreathingAt = (depthM: number): Breathing => {
     if (!isCCR) return ocBreathing(bestGasAtDepth(depthM, gases, env));
     if (!ccrDiluent) throw new Error('computeProfileForGFSet: CCR diluent not found');
@@ -136,13 +140,13 @@ export function computeProfileForGFSet(
   for (const seg of segments) {
     const gas = gasById.get(seg.gasId);
     if (!gas) throw new Error(`computeProfileForGFSet: unknown gasId "${seg.gasId}"`);
-    const breathing = bottomBreathing(gas);
     if (Math.abs(seg.depth - ctx.depth) > EPS) {
       const descending = seg.depth > ctx.depth;
       const rate = descending ? env.descentRate : env.ascentRate;
-      travelTo(ctx, seg.depth, rate, breathing);
+      // CCR: low setpoint only while descending; everything else on the high setpoint.
+      travelTo(ctx, seg.depth, rate, descending ? descentBreathing(gas) : holdBreathing(gas));
     }
-    if (seg.time > 0) holdFor(ctx, seg.time, breathing);
+    if (seg.time > 0) holdFor(ctx, seg.time, holdBreathing(gas));
   }
 
   const leaveBottomTime = ctx.clock;
