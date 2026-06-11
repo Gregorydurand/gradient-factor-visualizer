@@ -13,8 +13,10 @@ export const DEFAULT_SEGMENTS: DiveSegment[] = [
   { id: 's1', depth: 40, time: 20, gasId: 'air' },
 ];
 
+// Nameless by default so the label derives live from the GF pair (see gfSetLabel);
+// a user can still type a custom name to override it.
 export const DEFAULT_GF_SETS: GFSet[] = [
-  { id: 'gf1', name: '30/70', gfLow: 0.3, gfHigh: 0.7 },
+  { id: 'gf1', gfLow: 0.3, gfHigh: 0.7 },
 ];
 
 export const DEFAULT_ENVIRONMENT: EnvironmentConfig = { ...DEFAULT_ENV };

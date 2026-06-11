@@ -1,0 +1,212 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Visualization styling — View 1 (deco profile) + outputs table (Milestone 3).
+ * Instrument aesthetic (spec §10): deep canvas, whisper-faint gridlines, tabular
+ * numerals, the data doing the talking. Full "magnificent" polish is Milestone 7.
+ * Uses only the shared tokens so every view speaks one visual language.
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.viz-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-panel);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.viz-error {
+  color: var(--error);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.viz-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.viz-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.viz-axis-note {
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+/* shared swatch dot */
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 0 7px -1px currentColor;
+}
+
+/* ── Chart ─────────────────────────────────────────────────────────────────── */
+.chart {
+  position: relative;
+  width: 100%;
+}
+.chart-svg {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+.grid line {
+  stroke: var(--border);
+  stroke-width: 1;
+  opacity: 0.4;
+}
+.tick-label {
+  fill: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.profile-curve {
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 35%, transparent));
+}
+.cursor line {
+  stroke: var(--text-dim);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.7;
+}
+
+/* floating hover read-out */
+.chart-readout {
+  position: absolute;
+  top: var(--s-2);
+  transform: translateX(10px);
+  min-width: 150px;
+  padding: var(--s-2) var(--s-3);
+  background: color-mix(in srgb, var(--bg-elev) 92%, transparent);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-1);
+  box-shadow: 0 8px 24px -8px #000a;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+}
+.chart-readout.is-flipped {
+  transform: translateX(calc(-100% - 10px));
+}
+.chart-readout-time {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--s-1);
+}
+.chart-readout-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  line-height: 1.8;
+}
+.chart-readout-name {
+  color: var(--text-dim);
+}
+.chart-readout-depth {
+  color: var(--text);
+}
+.chart-readout-stop {
+  color: var(--text-faint);
+  min-width: 4ch;
+  text-align: right;
+}
+
+/* ── Legend ────────────────────────────────────────────────────────────────── */
+.viz-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+}
+.viz-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+}
+.viz-legend-name {
+  font-weight: 600;
+  color: var(--text);
+}
+.viz-legend-metrics {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+/* ── Outputs table ─────────────────────────────────────────────────────────── */
+.outputs {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-md);
+}
+.outputs th,
+.outputs td {
+  text-align: right;
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.outputs thead th {
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-strong);
+}
+.outputs thead th .dot {
+  margin-right: 6px;
+}
+.outputs-corner {
+  border-bottom: 1px solid var(--border-strong) !important;
+}
+.outputs tbody th[scope='row'] {
+  text-align: left;
+  color: var(--text-dim);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.outputs-sub {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  font-weight: 400;
+}
+.outputs-schedule td {
+  color: var(--text);
+}
+.outputs-stops {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.outputs-stops li {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.outputs-stop-arrow {
+  color: var(--text-faint);
+}
+.outputs-stop-min {
+  min-width: 3ch;
+  text-align: right;
+}
+.outputs-none {
+  color: var(--text-faint);
+}

@@ -115,7 +115,8 @@ export const useStore = create<State & Actions>((set) => ({
     set((s) =>
       s.gfSets.length >= MAX_GF_SETS
         ? {}
-        : { gfSets: [...s.gfSets, { id: uid('gf'), name: '40/85', gfLow: 0.4, gfHigh: 0.85 }] },
+        : // Nameless: the label derives live from the GF pair until the user names it.
+          { gfSets: [...s.gfSets, { id: uid('gf'), gfLow: 0.4, gfHigh: 0.85 }] },
     ),
   updateGFSet: (id, patch) =>
     set((s) => ({ gfSets: s.gfSets.map((gf) => (gf.id === id ? { ...gf, ...patch } : gf)) })),

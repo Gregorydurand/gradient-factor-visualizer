@@ -1,8 +1,9 @@
 // App shell — dark instrument layout (spec §10 foundation): an input-panel column
 // beside the stage, with the always-visible disclaimer footer (spec §1). The
-// stage holds the provisional results read-out today; the four visualizations
-// land in Milestones 3–6 and the full About/Limitations panel in M7.
-import { ResultsReadout } from './components/ResultsReadout';
+// stage now holds View 1 (deco profile) + the outputs table (Milestone 3); the
+// remaining views land in M4–M6 and the full About/Limitations panel in M7.
+import { OutputsTable } from './components/OutputsTable';
+import { DecoProfileChart } from './components/views/DecoProfileChart';
 import { EnvironmentPanel } from './components/panels/EnvironmentPanel';
 import { GasEditor } from './components/panels/GasEditor';
 import { GFSetsEditor } from './components/panels/GFSetsEditor';
@@ -40,14 +41,8 @@ export function App() {
         </aside>
 
         <main className="stage">
-          <ResultsReadout />
-          <div className="stage-placeholder">
-            <p className="placeholder-title">Visualizations arrive next</p>
-            <p className="placeholder-sub">
-              View 1 (deco profile) + outputs table is Milestone 3; ceiling, the GF / M-value
-              showpiece, and tissue loading follow in M4–M6.
-            </p>
-          </div>
+          <DecoProfileChart />
+          <OutputsTable />
         </main>
       </div>
 
