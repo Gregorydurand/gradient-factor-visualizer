@@ -26,6 +26,7 @@ import {
   mValue,
   mValueGF,
   modDepth,
+  ocBreathing,
   pressureToDepth,
   toleratedAmbient,
 } from '../index';
@@ -157,7 +158,7 @@ describe('integrators (spec 4.4 / 4.5)', () => {
   it('Haldane drives a compartment toward the inspired pressure', () => {
     const env = SALT;
     let s = initialTissueState(env);
-    s = applyConstantDepth(s, 30, 1000, AIR, env); // long soak
+    s = applyConstantDepth(s, 30, 1000, ocBreathing(AIR), env); // long soak
     const inspiredN2 = (depthToPressure(30, env) - 0.0627) * fN2(AIR);
     expect(s.pN2[0]).toBeCloseTo(inspiredN2, 4);
   });
@@ -165,8 +166,8 @@ describe('integrators (spec 4.4 / 4.5)', () => {
   it('Schreiner at zero depth-change equals Haldane', () => {
     const env = SALT;
     const start = initialTissueState(env);
-    const haldane = applyConstantDepth(start, 30, 7, AIR, env);
-    const schreiner = applyDepthChange(start, 30, 30, 7, AIR, env);
+    const haldane = applyConstantDepth(start, 30, 7, ocBreathing(AIR), env);
+    const schreiner = applyDepthChange(start, 30, 30, 7, ocBreathing(AIR), env);
     for (let i = 0; i < 16; i++) {
       expect(schreiner.pN2[i]).toBeCloseTo(haldane.pN2[i]!, 10);
     }
@@ -175,7 +176,7 @@ describe('integrators (spec 4.4 / 4.5)', () => {
   it('descent on-gasses N2 above the surface-saturation baseline', () => {
     const env = SALT;
     const start = initialTissueState(env);
-    const afterDescent = applyDepthChange(start, 0, 45, 45 / env.descentRate, AIR, env);
+    const afterDescent = applyDepthChange(start, 0, 45, 45 / env.descentRate, ocBreathing(AIR), env);
     expect(afterDescent.pN2[0]).toBeGreaterThan(start.pN2[0]!);
   });
 });
@@ -184,7 +185,7 @@ describe('ceiling controlling compartment (spec 4.7)', () => {
   it('picks the deepest-ceiling compartment after a bottom soak', () => {
     const env = SALT;
     let s = initialTissueState(env);
-    s = applyConstantDepth(s, 45, 25, AIR, env);
+    s = applyConstantDepth(s, 45, 25, ocBreathing(AIR), env);
     const c = ceilingAtGF(s, 0.3, env);
     expect(c.controlling).toBeGreaterThanOrEqual(0);
     expect(c.controlling).toBeLessThan(16);

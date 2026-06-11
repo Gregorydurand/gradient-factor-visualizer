@@ -99,3 +99,55 @@ export function bestGasAtDepth(depthM: number, gases: GasMix[], env: Environment
 export function ppO2AtDepth(gas: GasMix, depthM: number, env: EnvironmentConfig): number {
   return gas.fO2 * depthToPressure(depthM, env);
 }
+
+// ── Breathing source: what the tissues actually inspire (OC gas vs CCR loop) ──
+//
+// The tissue integrators (tissue.ts) only need the inspired inert partial pressures
+// as a function of ambient pressure; everything else (Haldane/Schreiner, M-values,
+// GF, ceiling) is identical for OC and CCR. So the only OC/CCR difference is HERE.
+//
+// OC: the gas fraction is fixed, so inspired_inert_species = (pAmb − P_H2O)·fSpecies
+//     and ppO2 = fO2·pAmb rises with depth.
+// CCR: the loop holds ppO2 at the setpoint, so the inert portion is what's left,
+//      split by the diluent's N₂:He ratio:
+//        ppO2  = min(setpoint, pAmb − P_H2O)               (capped near surface)
+//        inert = (pAmb − P_H2O − ppO2)                     (clamped ≥ 0)
+//        inspired_inert_species = inert · (fSpecies_dil / (fN2_dil + fHe_dil))
+// Both are linear in pAmb in the normal regime, so tissue.ts derives the Schreiner
+// rate as the secant of `inspired` across the travel step (exact for OC, and for
+// CCR away from the near-surface cap).
+
+export type Breathing = {
+  /** Inspired inert partial pressures (bar) at ambient pressure `pAmb`. */
+  inspired: (pAmb: number) => { pN2: number; pHe: number };
+};
+
+/** Open-circuit: a fixed-fraction gas (the v1 behaviour). */
+export function ocBreathing(gas: GasMix): Breathing {
+  const fNitro = fN2(gas);
+  const fHelium = gas.fHe;
+  return {
+    inspired: (pAmb) => ({
+      pN2: inspiredInert(pAmb, fNitro),
+      pHe: inspiredInert(pAmb, fHelium),
+    }),
+  };
+}
+
+/** Closed-circuit rebreather: a constant-ppO₂ loop on `setpoint` (bar) with the
+ *  given diluent supplying the inert gases in its N₂:He ratio. */
+export function ccrBreathing(diluent: GasMix, setpoint: number): Breathing {
+  const fNitro = fN2(diluent);
+  const fHelium = diluent.fHe;
+  const inertFrac = fNitro + fHelium;
+  const rN2 = inertFrac > 1e-12 ? fNitro / inertFrac : 0;
+  const rHe = inertFrac > 1e-12 ? fHelium / inertFrac : 0;
+  return {
+    inspired: (pAmb) => {
+      const usable = pAmb - P_H2O; // alveolar dry gas pressure
+      const ppO2 = Math.min(setpoint, usable); // can't hold the setpoint near surface
+      const inert = Math.max(0, usable - ppO2);
+      return { pN2: inert * rN2, pHe: inert * rHe };
+    },
+  };
+}

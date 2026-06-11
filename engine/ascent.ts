@@ -22,7 +22,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { COMPARTMENT_COUNT } from './constants';
-import { bestGasAtDepth } from './gas';
+import { bestGasAtDepth, ccrBreathing, ocBreathing, type Breathing } from './gas';
 import { ceilingAtGF, gfAtDepth } from './mvalue';
 import { applyConstantDepth, applyDepthChange, cloneTissue, initialTissueState } from './tissue';
 import type {
@@ -60,10 +60,10 @@ function record(ctx: Ctx): void {
   ctx.samples.push({ time: ctx.clock, depth: ctx.depth, tissue: cloneTissue(ctx.state) });
 }
 
-/** Travel from current depth to `toDepth` at the given rate (m/min, positive),
- *  breathing `gas`, sub-sampling at TRAVEL_SUBSTEP_MIN. Schreiner is exact for a
- *  constant rate, so sub-stepping only adds timeline resolution. */
-function travelTo(ctx: Ctx, toDepth: number, rateMPerMin: number, gas: GasMix): void {
+/** Travel from current depth to `toDepth` at the given rate (m/min, positive), on
+ *  breathing source `breathing`, sub-sampling at TRAVEL_SUBSTEP_MIN. Schreiner is
+ *  exact for a constant rate, so sub-stepping only adds timeline resolution. */
+function travelTo(ctx: Ctx, toDepth: number, rateMPerMin: number, breathing: Breathing): void {
   const fromDepth = ctx.depth;
   if (Math.abs(toDepth - fromDepth) < EPS) return;
   const totalTime = Math.abs(toDepth - fromDepth) / rateMPerMin;
@@ -73,7 +73,7 @@ function travelTo(ctx: Ctx, toDepth: number, rateMPerMin: number, gas: GasMix): 
     const t1 = ((s + 1) / steps) * totalTime;
     const d0 = fromDepth + ((toDepth - fromDepth) * t0) / totalTime;
     const d1 = fromDepth + ((toDepth - fromDepth) * t1) / totalTime;
-    ctx.state = applyDepthChange(ctx.state, d0, d1, t1 - t0, gas, ctx.env);
+    ctx.state = applyDepthChange(ctx.state, d0, d1, t1 - t0, breathing, ctx.env);
     ctx.clock += t1 - t0;
     ctx.depth = d1;
     record(ctx);
@@ -81,13 +81,13 @@ function travelTo(ctx: Ctx, toDepth: number, rateMPerMin: number, gas: GasMix): 
   ctx.depth = toDepth;
 }
 
-/** Hold at the current depth for `minutes`, breathing `gas`, sampling at
- *  STOP_STEP_MIN. Returns nothing; mutates ctx. */
-function holdFor(ctx: Ctx, minutes: number, gas: GasMix): void {
+/** Hold at the current depth for `minutes` on breathing source `breathing`, sampling
+ *  at STOP_STEP_MIN. Returns nothing; mutates ctx. */
+function holdFor(ctx: Ctx, minutes: number, breathing: Breathing): void {
   let remaining = minutes;
   while (remaining > EPS) {
     const step = Math.min(STOP_STEP_MIN, remaining);
-    ctx.state = applyConstantDepth(ctx.state, ctx.depth, step, gas, ctx.env);
+    ctx.state = applyConstantDepth(ctx.state, ctx.depth, step, breathing, ctx.env);
     ctx.clock += step;
     remaining -= step;
     record(ctx);
@@ -118,16 +118,31 @@ export function computeProfileForGFSet(
   };
   record(ctx); // t=0 at the surface
 
+  // Breathing-source selection. OC: the given / richest-usable gas at its fixed
+  // fraction. CCR: the diluent on a constant-ppO₂ loop — the LOW setpoint on the
+  // bottom, the HIGH setpoint once ascent/deco begins (single-diluent model). The
+  // ascent diluent is the gas breathed at the end of the bottom (the last segment).
+  const isCCR = env.mode === 'ccr';
+  const ccrDiluent = gasById.get(segments[segments.length - 1]!.gasId);
+  const bottomBreathing = (gas: GasMix): Breathing =>
+    isCCR ? ccrBreathing(gas, env.setpointLow) : ocBreathing(gas);
+  const ascentBreathingAt = (depthM: number): Breathing => {
+    if (!isCCR) return ocBreathing(bestGasAtDepth(depthM, gases, env));
+    if (!ccrDiluent) throw new Error('computeProfileForGFSet: CCR diluent not found');
+    return ccrBreathing(ccrDiluent, env.setpointHigh);
+  };
+
   // ── 1. Descent + bottom (and any multi-level legs) ────────────────────────
   for (const seg of segments) {
     const gas = gasById.get(seg.gasId);
     if (!gas) throw new Error(`computeProfileForGFSet: unknown gasId "${seg.gasId}"`);
+    const breathing = bottomBreathing(gas);
     if (Math.abs(seg.depth - ctx.depth) > EPS) {
       const descending = seg.depth > ctx.depth;
       const rate = descending ? env.descentRate : env.ascentRate;
-      travelTo(ctx, seg.depth, rate, gas);
+      travelTo(ctx, seg.depth, rate, breathing);
     }
-    if (seg.time > 0) holdFor(ctx, seg.time, gas);
+    if (seg.time > 0) holdFor(ctx, seg.time, breathing);
   }
 
   const leaveBottomTime = ctx.clock;
@@ -147,7 +162,7 @@ export function computeProfileForGFSet(
   const cLow = ceilingAtGF(ctx.state, gfSet.gfLow, env);
   let firstStopDepth = 0;
   if (cLow.ceilingDepth > EPS) {
-    const ascentGas = bestGasAtDepth(ctx.depth, gases, env);
+    const probeBreathing = ascentBreathingAt(ctx.depth);
     let probeState = cloneTissue(ctx.state);
     let probeDepth = ctx.depth;
     // Deepest possible first stop: the GF_low ceiling rounded up to a stop.
@@ -155,7 +170,7 @@ export function computeProfileForGFSet(
     while (candidate >= env.lastStopDepth - EPS) {
       if (probeDepth - candidate > EPS) {
         const dt = (probeDepth - candidate) / env.ascentRate;
-        probeState = applyDepthChange(probeState, probeDepth, candidate, dt, ascentGas, env);
+        probeState = applyDepthChange(probeState, probeDepth, candidate, dt, probeBreathing, env);
         probeDepth = candidate;
       }
       const target = Math.max(0, candidate - env.stopIncrement); // next shallower stop / surface
@@ -172,10 +187,10 @@ export function computeProfileForGFSet(
 
   if (firstStopDepth <= EPS) {
     // No decompression obligation — ascend straight to the surface.
-    travelTo(ctx, 0, env.ascentRate, bestGasAtDepth(ctx.depth, gases, env));
+    travelTo(ctx, 0, env.ascentRate, ascentBreathingAt(ctx.depth));
   } else {
     // ── 3. Ascend to the first stop, then stop-to-stop to the last stop ─────
-    travelTo(ctx, firstStopDepth, env.ascentRate, bestGasAtDepth(ctx.depth, gases, env));
+    travelTo(ctx, firstStopDepth, env.ascentRate, ascentBreathingAt(ctx.depth));
 
     // Build the ordered list of stop depths: first → … → lastStopDepth.
     const stopDepths: number[] = [];
@@ -186,7 +201,7 @@ export function computeProfileForGFSet(
     for (let i = 0; i < stopDepths.length; i++) {
       const stopDepth = stopDepths[i]!;
       const target = i + 1 < stopDepths.length ? stopDepths[i + 1]! : 0; // surface after last stop
-      const gas = bestGasAtDepth(stopDepth, gases, env); // switch applied on arrival
+      const breathing = ascentBreathingAt(stopDepth); // OC switch applied on arrival; CCR diluent
       const gfTarget = gfAtDepth(target, firstStopDepth, gfSet.gfLow, gfSet.gfHigh);
 
       // Hold (1-min steps) until the GF(target) ceiling permits ascending to target.
@@ -194,7 +209,7 @@ export function computeProfileForGFSet(
       while (true) {
         const c = ceilingAtGF(ctx.state, gfTarget, env);
         if (c.ceilingDepth <= target + EPS) break;
-        holdFor(ctx, STOP_STEP_MIN, gas);
+        holdFor(ctx, STOP_STEP_MIN, breathing);
         minutes += STOP_STEP_MIN;
         if (minutes > MAX_STOP_MINUTES) {
           throw new Error(`Stop at ${stopDepth} m did not clear within cap — check inputs`);
@@ -202,8 +217,8 @@ export function computeProfileForGFSet(
       }
       if (minutes > 0) stops.push({ depth: stopDepth, duration: minutes });
 
-      // Travel to the next target on the gas active at this (deeper) stop.
-      travelTo(ctx, target, env.ascentRate, gas);
+      // Travel to the next target on the breathing source active at this stop.
+      travelTo(ctx, target, env.ascentRate, breathing);
     }
   }
 

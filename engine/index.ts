@@ -23,7 +23,10 @@ export {
   roundToStop,
   bestGasAtDepth,
   ppO2AtDepth,
+  ocBreathing,
+  ccrBreathing,
 } from './gas';
+export type { Breathing } from './gas';
 export {
   initialTissueState,
   cloneTissue,

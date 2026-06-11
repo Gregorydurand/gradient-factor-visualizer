@@ -11,7 +11,9 @@ export type GasMix = {
   name: string; // "Tx 18/45", "EAN50", "O2"
   fO2: number; // 0..1
   fHe: number; // 0..1
-  role: 'bottom' | 'deco';
+  // 'bottom'/'deco' are open-circuit; 'diluent' is the CCR loop diluent (its fO2
+  // drives MOD/hypoxia limits, NOT the loop ppO2 — that's the setpoint).
+  role: 'bottom' | 'deco' | 'diluent';
   switchDepth?: number; // m; if set, manual override of MOD-derived switch
 };
 
@@ -39,6 +41,12 @@ export type EnvironmentConfig = {
   lastStopDepth: number; // m, default 3
   stopIncrement: number; // m, default 3
   ppO2Switch: number; // bar, selectable preset 1.4 | 1.6, default 1.6
+  // Open-circuit vs closed-circuit rebreather. In 'ccr' the loop holds ppO2 at a
+  // setpoint (low on the bottom, high on deco — switched at the start of ascent)
+  // and the diluent supplies the inert gases. 'oc' is the v1 behaviour.
+  mode: 'oc' | 'ccr'; // default 'oc'
+  setpointLow: number; // bar, CCR bottom setpoint, default 0.7
+  setpointHigh: number; // bar, CCR deco setpoint, default 1.3
 };
 
 // ---- engine output ----
@@ -84,7 +92,7 @@ export type TissueState = {
   pHe: number[]; // length 16, bar
 };
 
-/** Default environment per spec Sections 4.2 / 4.9 / 5. */
+/** Default environment per spec Sections 4.2 / 4.9 / 5. Defaults to open-circuit. */
 export const DEFAULT_ENV: EnvironmentConfig = {
   water: 'salt',
   surfacePressure: 1.01325,
@@ -93,4 +101,7 @@ export const DEFAULT_ENV: EnvironmentConfig = {
   lastStopDepth: 3,
   stopIncrement: 3,
   ppO2Switch: 1.6,
+  mode: 'oc',
+  setpointLow: 0.7,
+  setpointHigh: 1.3,
 };

@@ -18,10 +18,9 @@ import {
   N2_FRACTION_ATMOSPHERIC,
   P_H2O,
 } from './constants';
-import { inspiredInert } from './gas';
-import { barPerMetre, depthToPressure } from './pressure';
-import type { EnvironmentConfig, GasMix, TissueState } from './types';
-import { fN2 } from './gas';
+import type { Breathing } from './gas';
+import { depthToPressure } from './pressure';
+import type { EnvironmentConfig, TissueState } from './types';
 
 /** Surface-saturated initial tissue state: all compartments equilibrated with
  *  atmospheric air at surface pressure. He starts at 0. (Plan convention:
@@ -65,23 +64,21 @@ function schreinerStep(
 
 /**
  * Constant-depth (Haldane) loading for a segment held at `depthM` for `t` minutes
- * breathing `gas`. Mutates and returns a NEW tissue state. Spec 4.4.
+ * from breathing source `breathing` (OC gas or CCR loop). Returns a NEW state. 4.4.
  */
 export function applyConstantDepth(
   state: TissueState,
   depthM: number,
   t: number,
-  gas: GasMix,
+  breathing: Breathing,
   env: EnvironmentConfig,
 ): TissueState {
-  const pAmb = depthToPressure(depthM, env);
-  const pInspN2 = inspiredInert(pAmb, fN2(gas));
-  const pInspHe = inspiredInert(pAmb, gas.fHe);
+  const insp = breathing.inspired(depthToPressure(depthM, env));
 
   const out = cloneTissue(state);
   for (let i = 0; i < COMPARTMENT_COUNT; i++) {
-    out.pN2[i] = haldaneStep(state.pN2[i]!, pInspN2, K_N2[i]!, t);
-    out.pHe[i] = haldaneStep(state.pHe[i]!, pInspHe, K_HE[i]!, t);
+    out.pN2[i] = haldaneStep(state.pN2[i]!, insp.pN2, K_N2[i]!, t);
+    out.pHe[i] = haldaneStep(state.pHe[i]!, insp.pHe, K_HE[i]!, t);
   }
   return out;
 }
@@ -100,31 +97,25 @@ export function applyDepthChange(
   depthStart: number,
   depthEnd: number,
   t: number,
-  gas: GasMix,
+  breathing: Breathing,
   env: EnvironmentConfig,
 ): TissueState {
   if (t <= 0) return cloneTissue(state);
 
-  const bpm = barPerMetre(env.water);
-  // Signed depth rate (m/min): + descending, − ascending.
-  const depthRate = (depthEnd - depthStart) / t;
-  const pAmbStart = depthToPressure(depthStart, env);
+  const i0 = breathing.inspired(depthToPressure(depthStart, env));
+  const i1 = breathing.inspired(depthToPressure(depthEnd, env));
 
-  const fHe = gas.fHe;
-  const fNitro = fN2(gas);
-
-  const pInsp0N2 = inspiredInert(pAmbStart, fNitro);
-  const pInsp0He = inspiredInert(pAmbStart, fHe);
-
-  // R = rate of change of inspired inert pressure = (depthRate * bar_per_metre) * F_gas
-  const rateBar = depthRate * bpm;
-  const Rn2 = rateBar * fNitro;
-  const Rhe = rateBar * fHe;
+  // R = rate of change of inspired inert pressure (bar/min). Both OC and the CCR
+  // loop are linear in ambient pressure, so the secant of `inspired` across the
+  // travel step is exact for OC (= depthRate·bar_per_metre·F_gas, as before) and a
+  // close average for CCR through the near-surface ppO₂ cap.
+  const Rn2 = (i1.pN2 - i0.pN2) / t;
+  const Rhe = (i1.pHe - i0.pHe) / t;
 
   const out = cloneTissue(state);
   for (let i = 0; i < COMPARTMENT_COUNT; i++) {
-    out.pN2[i] = schreinerStep(state.pN2[i]!, pInsp0N2, Rn2, K_N2[i]!, t);
-    out.pHe[i] = schreinerStep(state.pHe[i]!, pInsp0He, Rhe, K_HE[i]!, t);
+    out.pN2[i] = schreinerStep(state.pN2[i]!, i0.pN2, Rn2, K_N2[i]!, t);
+    out.pHe[i] = schreinerStep(state.pHe[i]!, i0.pHe, Rhe, K_HE[i]!, t);
   }
   return out;
 }
