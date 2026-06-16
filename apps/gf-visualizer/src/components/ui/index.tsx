@@ -13,7 +13,15 @@ export function Panel(props: {
   defaultOpen?: boolean;
 }) {
   const { title, children, actions, subtitle, defaultOpen = true } = props;
-  const [open, setOpen] = useState(defaultOpen);
+  // On narrow/mobile screens the panels stack into one column, so start them
+  // collapsed (matching the 820px layout breakpoint) to keep the views in reach;
+  // honor the per-panel default on wider screens. Initial state only — manual
+  // expand/collapse is preserved on resize.
+  const [open, setOpen] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia?.('(max-width: 820px)').matches
+      ? false
+      : defaultOpen,
+  );
   return (
     <section className="panel">
       <header className="panel-head">
