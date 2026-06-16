@@ -41,6 +41,11 @@ export function App() {
           </div>
         </div>
         <div className="header-tools">
+          {/* Sibling app — the planner deploys at <visualizer base>/planner/, so the
+              GF Visualizer is exactly one level up (../ on Pages and when previewed). */}
+          <a className="cross-link" href="../">
+            <span aria-hidden="true">←</span> GF Visualizer
+          </a>
           <SegmentedControl options={UNIT_OPTS} value={units} ariaLabel="Units" onChange={setUnits} />
           <button type="button" className="about-btn" onClick={() => setAboutOpen(true)}>
             About
