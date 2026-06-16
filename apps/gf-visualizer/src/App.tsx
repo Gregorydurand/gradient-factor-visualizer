@@ -38,6 +38,11 @@ export function App() {
           </div>
         </div>
         <div className="header-tools">
+          {/* Sibling app — the Gas Planner deploys at <this app's served path>/planner/,
+              so a relative link tracks it on GitHub Pages and wherever this is hosted. */}
+          <a className="cross-link" href="planner/">
+            Bailout Planner <span aria-hidden="true">→</span>
+          </a>
           <SegmentedControl options={UNIT_OPTS} value={units} ariaLabel="Units" onChange={setUnits} />
           <button type="button" className="about-btn" onClick={() => setAboutOpen(true)}>
             About

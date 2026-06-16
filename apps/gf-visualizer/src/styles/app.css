@@ -306,3 +306,18 @@
   border-radius: var(--r-1);
   padding: 2px var(--s-2);
 }
+/* ── Cross-link to the sibling app (Two Ceilings ⟷ GF Visualizer) ───────────── */
+.cross-link {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  padding: 5px var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-1);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.cross-link:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
